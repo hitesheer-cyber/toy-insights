@@ -190,49 +190,18 @@ Content-Type: application/json
 
 ---
 
-## 🐛 The Deliberate Bug
+## 🐛 The Challenge
 
-### What is it?
-**Mutable default in Pydantic model** causing cross-request state bleed.
+There's a **deliberate bug** in the codebase that candidates need to find and fix.
 
-### Location
-`src/api/models.py` — `ChatRequest` class
+**Hint:** It's a common Python gotcha related to default argument values in one of the API model classes. The bug causes state to leak between requests.
 
-### The Bug
-```python
-class ChatRequest(BaseModel):
-    query: str
-    k: int = 5
-    filters: list[str] = []  # <-- BUG: mutable default!
-```
-
-### Why is it a bug?
-Pydantic models cache mutable defaults. All instances share the same list object:
-```python
-req1 = ChatRequest(query="q1")
-req2 = ChatRequest(query="q2")
-
-req1.filters.append("filter1")
-# req2.filters now also contains "filter1"! ❌
-```
-
-### The Fix
-```python
-from pydantic import Field
-
-class ChatRequest(BaseModel):
-    query: str
-    k: int = 5
-    filters: list[str] = Field(default_factory=list)  # ✅ Fixed!
-```
-
-### Detecting the Bug
+**Detecting it:**
 ```bash
-# Run the test that detects the bug (currently fails)
-pytest tests/test_bug.py::TestMutableDefaultBug::test_mutable_default_state_bleed -v
-
-# After implementing the fix, it should pass
+# This test currently fails - it should pass after the fix
+pytest tests/test_bug.py -v
 ```
+Check the model ChatRequest and think in the diection of mutable/immutable defaults- just a one line fix
 
 ---
 
@@ -288,36 +257,19 @@ Use this rubric to assess the work:
 ## 🔍 Component Details
 
 ### Embeddings (`src/rag/embeddings.py`)
-- Uses Hugging Face `sentence-transformers` for semantic embeddings
-- Falls back to mock embeddings (deterministic hash-based) if package unavailable
-- Model: `sentence-transformers/all-MiniLM-L6-v2` (384-dim embeddings)
+Using `sentence-transformers/all-MiniLM-L6-v2` for semantic embeddings (384-dim vectors). Falls back to mock embeddings if unavailable.
 
-### Vector Store (`src/rag/vectorstore.py`)
-- FAISS (Facebook AI Similarity Search) for local vector indexing
-- Persists index to `data/vectors/` directory
-- Falls back to in-memory search if FAISS unavailable
-- Supports efficient similarity search with L2 distance metric
+### Vector Store (`src/rag/vectorstore.py`)  
+FAISS-based local vector index persisted to `data/vectors/`. Supports efficient nearest-neighbor search.
 
 ### RAG Pipeline (`src/rag/pipeline.py`)
-- **Chunking:** Splits documents into 300-char chunks with 50-char overlap
-- **Retrieval:** Embeds query, searches for top-k similar chunks
-- **Augmentation:** Constructs prompt with context from retrieved chunks
-- **Generation:** Mock LLM (can replace with OpenAI, HuggingFace, etc.)
-- **Caching:** 5-minute TTL on Redis for recent queries
+Chunks documents (300 chars, 50 overlap) → embeds query → retrieves top-k → constructs prompt → generates answer (mock LLM). Redis caching with 5-min TTL.
 
 ### Database (`src/db/`)
-- **ORM:** SQLAlchemy for model definitions
-- **Tables:**
-  - `documents`: Metadata for ingested files
-  - `chunks`: Document chunks with indices
-  - `chat_transcripts`: Chat history with sources
-- **Connection:** PostgreSQL (or SQLite for local dev)
+SQLAlchemy ORM with tables: `documents`, `chunks`, `chat_transcripts`. PostgreSQL or SQLite.
 
 ### Cache (`src/cache/redis_client.py`)
-- Simple Redis wrapper with TTL support
-- Falls back to in-memory mock if Redis unavailable
-- Default TTL: 300 seconds (5 minutes)
-- Used for `/chat` endpoint caching
+Redis wrapper with TTL support. Falls back to in-memory cache if Redis unavailable.
 
 ---
 
@@ -415,26 +367,11 @@ Optimize with:
 
 ---
 
-## 📚 Learning Resources
+## 📚 Resources
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [SQLAlchemy ORM](https://docs.sqlalchemy.org/)
-- [Pydantic Validation](https://docs.pydantic.dev/)
-- [FAISS Tutorial](https://github.com/facebookresearch/faiss/wiki/Getting-started)
-- [Sentence Transformers](https://www.sbert.net/)
-- [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/)
-- [RAG Patterns](https://python.langchain.com/docs/use_cases/question_answering/)
-
----
-
-## 💡 Support & Questions
-
-If stuck:
-1. **Check existing code:** Similar patterns are used elsewhere
-2. **Read docstrings:** Most functions have usage examples
-3. **Run tests:** `pytest -v` shows expected behavior
-4. **Read error messages:** Often indicate the exact problem
-5. **Ask clarifying questions:** Thoughtful questions demonstrate engagement
+- [FastAPI](https://fastapi.tiangolo.com/) | [SQLAlchemy](https://docs.sqlalchemy.org/) | [Pydantic](https://docs.pydantic.dev/)
+- [FAISS](https://github.com/facebookresearch/faiss/wiki/Getting-started) | [Sentence Transformers](https://www.sbert.net/)
+- [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/) | [RAG Patterns](https://python.langchain.com/docs/use_cases/question_answering/)
 
 ---
 

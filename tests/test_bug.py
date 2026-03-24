@@ -8,99 +8,42 @@ import pytest
 from src.api.models import ChatRequest
 
 
+@pytest.fixture(autouse=True)
+def cleanup_model_state():
+    """Clean up any modifications to the model fields after each test."""
+    yield
+    # Reset the filters default to empty list after each test (if it's mutable)
+    default_field = ChatRequest.model_fields.get("filters")
+    if default_field and isinstance(default_field.default, list):
+        default_field.default.clear()
+
+
 class TestMutableDefaultBug:
     """Test and document the mutable default bug."""
     
-    def test_mutable_default_state_bleed(self):
+    def test_filters_not_shared_between_requests(self):
         """
-        This test FAILS with the current buggy code.
+        This test FAILS with the current buggy code and PASSES after fix.
         
         The bug: ChatRequest uses a mutable default (list) for filters.
-        Pydantic models cache mutable defaults, causing state bleed across instances.
+        If the class-level default is mutable, mutating it affects all future instances.
         
-        Expected behavior: Each request should have independent filters.
-        Actual (buggy) behavior: Filters accumulate across requests.
         """
-        # First request, add a filter
-        req1 = ChatRequest(query="query1", filters=["filter_a"])
-        assert req1.filters == ["filter_a"]
+        filters_field = ChatRequest.model_fields["filters"]
         
-        # Second request, no filters specified (should default to empty)
-        req2 = ChatRequest(query="query2")
-        # BUG: req2.filters might be ["filter_a"] due to mutable default!
-        # This is the bug we're testing for.
-        assert req2.filters == [], f"Bug detected! Got {req2.filters}, expected []"
-    
-    def test_multiple_requests_independent(self):
-        """
-        Test that multiple requests maintain independent state.
-        This reveals the mutable default bug.
-        """
-        req1 = ChatRequest(query="query1")
-        req2 = ChatRequest(query="query2")
-        req3 = ChatRequest(query="query3")
+        # Attempt to mutate the class-level default (only possible if it's a mutable list)
+        if isinstance(filters_field.default, list):
+            filters_field.default.append("leaked_filter")
         
-        # All should have empty filters
-        assert req1.filters == []
-        assert req2.filters == []
-        assert req3.filters == []
+        # Create a fresh instance - should always have empty filters
+        fresh_request = ChatRequest(query="hello")
         
-        # Modify req1's filters
-        req1.filters.append("new_filter")
-        
-        # Others should NOT be affected (but will be with the bug)
-        assert req2.filters == [], f"State bleed! req2.filters = {req2.filters}"
-        assert req3.filters == [], f"State bleed! req3.filters = {req3.filters}"
-    
-    def test_the_fix_using_default_factory(self):
-        """
-        Demonstrate the fix: use Field(default_factory=list).
-        
-        This is how it SHOULD be implemented:
-        
-        filters: list[str] = Field(default_factory=list)
-        
-        Not:
-        filters: list[str] = []
-        """
-        # This comment documents what the fix should look like
-        # Uncomment the Field import and update the model to test the fix
-        from pydantic import Field, BaseModel
-        
-        class ChatRequestFixed(BaseModel):
-            query: str
-            k: int = 5
-            filters: list[str] = Field(default_factory=list)
-        
-        req1 = ChatRequestFixed(query="query1")
-        req2 = ChatRequestFixed(query="query2")
-        
-        req1.filters.append("filter1")
-        
-        # With the fix, req2 should NOT be affected
-        assert req2.filters == []
-        assert req1.filters == ["filter1"]
+        # Test the behavior: filters should be empty for the new instance
+        assert fresh_request.filters == [], (
+            f"State bleed detected! Got: {fresh_request.filters}. "
+            f"The mutable default [] is shared across all instances. "
+        )
 
-
-class TestBugFixValidation:
-    """
-    Instructions for fixing the bug:
-    
-    1. Open: src/api/models.py
-    2. Find the ChatRequest class
-    3. Change:
-        filters: list[str] = []
-       To:
-        filters: list[str] = Field(default_factory=list)
-    4. Add the import if needed:
-        from pydantic import Field
-    5. Run: pytest tests/test_bug.py -v
-    6. Tests should pass after fix.
-    """
-    
-    def test_fix_instructions_are_clear(self):
-        """This test passes if you read the instructions above."""
-        assert True
 
 
 if __name__ == "__main__":

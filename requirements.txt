@@ -1,12 +1,16 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-pydantic==2.4.2
-pydantic-settings==2.0.3
-sentence-transformers==2.2.2
-faiss-cpu==1.7.4
-redis==5.0.1
-pytest==7.4.3
-pytest-cov==4.1.0
-python-dotenv==1.0.0
+# Core dependencies
+fastapi>=0.115.0,<0.116.0
+uvicorn[standard]>=0.32.0,<0.33.0
+sqlalchemy>=2.0.36,<2.1.0
+psycopg2-binary>=2.9.10,<3.0.0
+pydantic>=2.10.0,<3.0.0
+pydantic-settings>=2.7.0,<3.0.0
+faiss-cpu>=1.9.0,<2.0.0
+redis>=5.2.0,<6.0.0
+python-dotenv>=1.0.1,<2.0.0
+pytest>=8.3.0,<9.0.0
+pytest-cov>=6.0.0,<7.0.0
+
+# ML/Embeddings (optional - uses mock embeddings if not installed)
+# Uncomment for real semantic search:
+# sentence-transformers>=3.3.0,<4.0.0

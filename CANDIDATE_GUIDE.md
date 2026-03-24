@@ -1,6 +1,6 @@
 # Candidate Getting Started Guide
 
-## Welcome to Toy Insights! 👋
+## Welcome to Toy Insights!
 
 This is an interview template project that tests your ability to work with:
 - **Python backend** (FastAPI, SQLAlchemy)
@@ -33,7 +33,7 @@ This is an interview template project that tests your ability to work with:
 ## Step 2: Explore the Code (5 minutes)
 
 ### Start here:
-1. **[README.md](README.md)** - Project overview and evaluation rubric
+1. **[README.md](README.md)** - Project overview
 2. **[src/api/main.py](src/api/main.py)** - FastAPI endpoints
 3. **[src/api/models.py](src/api/models.py)** - Request/response schemas
 4. **[src/rag/pipeline.py](src/rag/pipeline.py)** - RAG orchestration
@@ -50,35 +50,44 @@ Most tests should pass. Notice that `tests/test_bug.py` **will fail** — that's
 ## Step 3: Find and Fix the Bug (20 minutes)
 
 ### The Challenge
-There's a **deliberate bug** in the starter code. Your job is to:
-1. Identify the bug
-2. Write a test that fails because of it
+There's a **deliberate bug** in the codebase. Your job is to:
+1. Identify the bug by running tests and inspecting code
+2. Understand why it causes problems
 3. Fix the bug
-4. Verify the test passes
+4. Verify all tests pass
 
-### Where's the bug?
-Look in `src/api/models.py` → `ChatRequest` class
-
-**Hint:** It's a common Python gotcha related to mutable defaults.
-
-### How to detect it
+### Finding the Bug
 ```bash
-pytest tests/test_bug.py::TestMutableDefaultBug::test_mutable_default_state_bleed -v
+# Run all tests - one will fail
+pytest tests/ -v
+
+# Look specifically at the bug detection test
+pytest tests/test_bug.py -v
 ```
 
-This test currently FAILS. After you fix it, it should PASS.
+**Hints:**
+- The failing test will point you in the right direction
+- It's in the ChatRequest class
+- Related to a common Python gotcha with default arguments
+- Consider how Pydantic handles default values
 
-### How to understand it
-Read the detailed explanation in [`tests/test_bug.py`](tests/test_bug.py).
+### Understanding It
+Once you find the failing test, read the test code carefully. It demonstrates the problematic behavior. Think about:
+- What state is being shared between requests?
+- Why would this happen with default values?
+- How do mutable vs immutable defaults behave?
 
-### How to fix it
-The fix is simple (1-2 lines):
-- Change the mutable default to use `Field(default_factory=list)`
-- Verify all tests pass
+### Fixing It
+The fix is simple (1-2 lines). Look up Pydantic's `Field` with `default_factory` if you're stuck.
+
+After fixing, verify:
+```bash
+pytest tests/ -v  # All tests should pass
+```
 
 ---
 
-## Step 4: Explain Your Work (10 minutes)
+## Step 4: Discussion (10 minutes)
 
 Discuss what you've accomplished:
 
@@ -92,11 +101,11 @@ Discuss what you've accomplished:
 ## Testing During the Interview
 
 ```bash
-# Run all tests to verify the fix
+# Run all tests
 pytest tests/ -v
 
-# The test that detects the bug
-pytest tests/test_bug.py::TestMutableDefaultBug -v
+# Run specific test file
+pytest tests/test_bug.py -v
 ```
 
 ---
@@ -117,10 +126,12 @@ First run downloads the model (~100MB). It's cached locally.
 Or use mock embeddings (already implemented as fallback).
 
 ### "Tests are failing"
-1. Check imports: `pip install -r requirements.txt`
-2. Verify `.env` is set up: `cp .env.example .env`
+1. Install dependencies: `pip install -r requirements.txt`
+2. Set up environment: `cp .env.example .env`
 3. Initialize DB: `python -c "from src.db.orm import engine; from src.db import schema; schema.init_db(engine)"`
 4. Seed data: `python scripts/seed.py`
+
+**Note:** One test is *supposed* to fail initially - that's the bug you need to fix!
 
 ### "I broke something"
 1. Check git status: `git status`
@@ -129,27 +140,12 @@ Or use mock embeddings (already implemented as fallback).
 
 ---
 
-## Evaluation Rubric (for reference)
+## Time Allocation
 
-Your work will be evaluated on:
-
-| Metric | %   | What we're looking for |
-|--------|-----|---|
-| Architecture & Code Quality | 20% | Clear structure, good naming, proper error handling |
-| API Correctness | 20% | Endpoints work as specified, validation with Pydantic |
-| RAG Quality | 20% | Good retrieval, sensible answers, proper citations |
-| Data & Cache | 15% | DB works, caching reduces work, queries are efficient |
-| Testing | 15% | Tests pass, good coverage, bug is identified & fixed |
-| Azure Awareness | 10% | Can explain Container Apps, Key Vault, deployment flow |
-
----
-
-## Time Allocation (Suggested)
-
-- **Understand:** 5 min
-- **Explore & Find Bug:** 10 min
-- **Fix Bug:** 15 min
-- **Verify & Explain:** 10 min
+- **Understand:** 5 min - Skim docs, run initial tests
+- **Explore:** 10 min - Find the failing test, locate bug
+- **Fix:** 15 min - Implement fix, verify tests pass
+- **Discuss:** 10 min - Explain your work and approach
 
 **Total: 40 minutes**
 
@@ -170,7 +166,7 @@ Your work will be evaluated on:
 ```bash
 # Setup
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 
@@ -200,4 +196,4 @@ docker-compose -f infra/docker/docker-compose.yml up
 
 ---
 
-Good luck! You've got this! 🚀
+Good luck! You've got this!

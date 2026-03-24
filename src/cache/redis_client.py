@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 class RedisClient:
     """Simple Redis wrapper with TTL support."""
     
+    # In-memory mock cache (fallback)
+    _mock_cache = {}
+    
     def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
         """
         Initialize Redis client.
@@ -91,9 +94,6 @@ class RedisClient:
             self._client.flushdb()
         except Exception as e:
             logger.error(f"Redis flushdb failed: {e}")
-    
-    # In-memory mock cache (fallback)
-    _mock_cache = {}
 
 
 # Global Redis client instance

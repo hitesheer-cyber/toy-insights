@@ -2,6 +2,7 @@
 Unit tests for the FastAPI endpoints.
 Tests /health, /ingest, /search, /chat endpoints.
 """
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -9,11 +10,16 @@ from sqlalchemy.orm import sessionmaker
 
 from src.api.main import app
 from src.api.deps import get_db
-from src.db.orm import Base
+from src.db.orm import Base, Document, Chunk, ChatTranscript  # Import models to register them
 
 
-# Use in-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+# Use file-based SQLite for testing (in-memory causes issues with connections)
+TEST_DB_PATH = "test_toy_insights.db"
+SQLALCHEMY_DATABASE_URL = f"sqlite:///./{TEST_DB_PATH}"
+
+# Clean up any existing test database
+if os.path.exists(TEST_DB_PATH):
+    os.remove(TEST_DB_PATH)
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -22,6 +28,7 @@ engine = create_engine(
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Create tables
 Base.metadata.create_all(bind=engine)
 
 
