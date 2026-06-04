@@ -53,7 +53,7 @@ class ChatRequest(BaseModel):
     """
     query: str = Field(..., description="User query")
     k: int = Field(5, ge=1, le=50, description="Retrieval top-k")
-    filters: list[str] = []  # <-- DELIBERATE_BUG
+    filters: list = Field(default_factory=list) # <-- DELIBERATE_BUG
 
 
 class ChatResponse(BaseModel):
