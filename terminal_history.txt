@@ -1,0 +1,16 @@
+    1  source venv/bin/activate
+    2  pytest tests/ -v
+    3  pip install httpx
+    4  pytest tests/ -v
+    5  python -m pytest tests/ -v
+    6  git add src/api/models.py
+    7  git commit -m "Fix mutable default argument in ChatRequest"
+    8  git status   
+    9  python -m pytest tests/ -v
+   10  git add src/api/models.py
+   11  git commit -m "Fix mutable default argument in ChatRequest (state leak between requests)"
+   12  git push origin main
+   13  git remote -v
+   14  git log --pretty=format:"%h  %ad  %s" --date=local
+   15  git show HEAD  
+   16  history > terminal_history.txt
